@@ -259,3 +259,70 @@ String path = getServletContext().getContextPath();
   - `getRemotePort()`:获取远程客户端的端口号
 - 请求头相关
   - `getHeader("Name")`:根据名字获取请求头
+  - `getInputStream()`:获取输入流
+
+## HttpServletResponse
+
+>接口,父接口为ServletResponse,Tomcat提前创立,在Tomcat调用service方法时传入,将响应的报文传给客户端
+
+常见api
+
+- 响应行相关
+  - `setStatus()`:设置响应码(202,404)
+- 响应头相关
+  - `setHeader()`:设置响应头的参数值("Content-Type","text/html")
+  - `setContentType()`:设置响应数据类型("text/html")
+  - `setContentLength()`:设置响应数据长度
+  - `getOutputStream()`:获得输出流
+
+## 请求转发
+
+- 请求转发和响应重定向是web应用中间接访问项目资源的重要方式
+- 请求转发由HttpServletRequest实现,响应重定向由HttpServletResponse实现
+
+流程图:
+
+```mermaid
+graph LR
+A(客户端发送请求) --> B(创建req和resp对象) --> C(Servlet1发现无法处理) --> D(转发给Servlet2) --> E(处理好后利用resp对象返回报文)
+```
+
+```java
+RequestDispatcher reqdispatcher = req.getRequestDispatcher("资源"); //获取转发器
+reqdispatcher.forward(req,resp); //执行转发操作
+```
+
+- 客户端只发了一次请求
+- 客户端的地址不变
+- 目标资源可以是servlet动态资源也可以是静态资源(包括WEB/INF)
+- 目标资源不能是外部资源
+- 请求参数可以继续传递
+
+## 响应重定向
+
+```mermaid
+graph LR
+A(客户端发送请求) --> B(创建req和resp对象) --> C(Servlet1发现无法处理) --> D(返回302状态码并指定location) --> E(再次创建req和resp对象) --> F(找到location对应的地址) --> G(处理好后利用resp对象返回报文)
+```
+
+```java
+resp.sendRedirect("资源");
+```
+
+- 响应重定向是客户端在服务器提示下的行为
+- 响应重定向客户端至少发送了两次请求
+- 请求中的参数不能传递
+- 重定向可以是静态资源
+- 无法访问WEB-INF里的资源
+- 可以重定向外部的资源
+
+## 相对路径和绝对路径
+
+- 相对路径
+  - 相对于当前文件的位置
+  - 不以`/`开头
+  - 前一级别路径为`./`上一级路径为`../`
+- 绝对路径(后端代码不用写上下文位置,以`/`开头即可)
+  - 以`/`开头
+  - 不依赖当前文件的位置
+  - 不包括ip
