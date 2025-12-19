@@ -140,3 +140,94 @@ int result = preparedStatement.executeUpdate();
 ## 使用Hamcrest和Junit包进行调试
 
 使用@Test对方法进行注解即可调试
+
+## 常见报错
+
+- SQLSyntaxErrorException:SQL语句语法错误/数据库名称错误
+- SQLException
+  - No value:未设置占位符
+  - Access denied:账号密码错误
+  - CommunicationException:通信异常
+
+## 实体类和ORM
+
+### 实体类
+
+- 对于面向对象的Java而言,数据都是零散的不方便管理,此时需要一个类作为表的载体,一行数据对应Java中的一个对象,一个列对应一个属性
+
+>对象类一般放在POJO包里面
+
+#### 实体类初始化
+
+- 创建对象
+- 初始化属性(满足驼峰)
+- 定义构造器(无参与有参)
+- 定义set/get方法
+- 定义toString方法
+
+### ORM思想
+
+- ORM思想(Object Relation Mapping):对象到数据库的映射,以面向对象的思想操作数据库
+- ORM框架:MyBatis,JPA
+
+在返回结果集时使用映射类
+
+- 封装单个对象
+
+```java
+MyTable myTable = null; //若返回集有内容才创建对象
+while (resultSet.next()) {
+    int anInt = resultSet.getInt("id");
+    String lastName = resultSet.getString("last_name");
+    myTable = new MyTable(anInt, lastName);
+    System.out.println(myTable);
+}
+```
+
+>输出toString的值
+
+- 封装集合
+
+```java
+List<MyTable> myTablesList = new ArrayList<>();
+
+MyTable myTable = null;
+while (resultSet.next()) {
+    int anInt = resultSet.getInt("id");
+    String lastName = resultSet.getString("last_name");
+
+    myTable = new MyTable(anInt, lastName);
+
+    myTablesList.add(myTable);
+}
+
+for (MyTable table : myTablesList) {
+    System.out.println(table);
+}
+```
+
+## 主键回显
+
+- 用刚刚新增的数据作为我后续修改的条件
+- 在Java程序中获取数据库中新插入的数据的主键值并赋值给Java对象,此操作称为主键回显
+
+```java
+String sql = "INSERT INTO mytable(last_name) VALUES(?)";
+PreparedStatement preparedStatement = connection.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+
+MyTable myTable = new MyTable(0,"刘");
+
+preparedStatement.setString(1,myTable.getLastName());
+
+int i = preparedStatement.executeUpdate();
+
+if (i > 0) {
+    ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+
+    if (generatedKeys.next()) {
+        int anInt = generatedKeys.getInt(1);
+
+        System.out.println(anInt); //返回3
+    }
+}
+```
