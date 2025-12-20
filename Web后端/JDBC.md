@@ -25,7 +25,7 @@ String url = "jdbc:mysql://localhost:3306/world";
 String user = "root";
 String password = "1234";
 
-DriverManager.getConnection(url,user,password);
+Connection connection = DriverManager.getConnection(url,user,password);
 ```
 
 - 获取执行SQL语句的对象
