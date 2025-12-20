@@ -141,6 +141,8 @@ int result = preparedStatement.executeUpdate();
 
 使用@Test对方法进行注解即可调试
 
+使用@BeforeClass表示在加载类之前先加载某个放啊
+
 ## 常见报错
 
 - SQLSyntaxErrorException:SQL语句语法错误/数据库名称错误
