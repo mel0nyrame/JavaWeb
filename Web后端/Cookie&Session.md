@@ -98,5 +98,3 @@ session.setAttribute(String str,Objet obj); //存放属性数据
   - 应用域:ServletContext,本应用内,可以跨多个会话,一般放本应用程序有关的数据
 
 ![alt text](/Web后端/img/image4.png)
-
-
