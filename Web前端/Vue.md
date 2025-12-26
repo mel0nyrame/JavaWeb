@@ -49,7 +49,7 @@ npm run dev //启动项目
 4. `pages/`：页面级组件，对应路由
 5. `plugins/`：Vite插件配置
 6. `router/`：Vue路由配置
-7. `store/`：Vuex状态管理
+7. `store/`：Vue状态管理
 8. `utils/`：通用工具函数
 
 - `vite.config.js`：Vite配置文件
@@ -88,7 +88,7 @@ import HelloWorld from './components/HelloWorld.vue'
 css导入方式:
 
 - 在`<script>`标签中导入
-- 在`<script>`标签中导入,但是要加@(@import)
+- 在`<style>`标签中导入,但是要加@(@import)
 - 在main.js中导入,作用到全局
 
 ## Vue3语法
