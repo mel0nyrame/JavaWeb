@@ -290,7 +290,7 @@ watch(() => object.value,(newValue,oldValue) => {
 
 >红色的为钩子函数
 
-详细的看VueApi(https://cn.vuejs.org/guide/essentials/lifecycle.html)
+详细的看VueApi(`https://cn.vuejs.org/guide/essentials/lifecycle.html`)
 
 重写生命周期函数
 
@@ -314,3 +314,438 @@ onMounted(() => {
   - 需要先传给父组件再传给兄弟组件
 
 在后面的router或pinia中会详细地提及
+
+## Router机制
+
+- 根据不同的url跳转到不同的内容或页面
+- 例如:/home -> home.vue; /list -> list.vue
+- 通过路由的文件定义路径和组件的关系
+
+### Router初步
+
+- App.vue
+
+```js
+<router-view></router-view> //该标签相当于占位,配置了路由只会会被替换成相对应的组件
+```
+
+- router.js
+
+>配置路由
+
+```js
+import {createRouter,createWebHashHistory} from 'vue-router'
+import Vue from '../components/Vue.vue'
+import HelloWorld from '../components/HelloWorld.vue'
+
+const router = createRouter({
+    history:createWebHashHistory(), //不同的历史模式
+    router:[
+        {
+            path:"/",
+            component:Vue
+        },
+        {
+            path:"/HelloWorld",
+            component:HelloWorld
+        }
+    ]
+})
+
+export default router //暴露给main.js
+```
+
+- main.js
+
+```js
+app.use(router);
+```
+
+- App.vue
+
+```js
+<router-view></router-view> //在想渲染的地方放上标签
+<router-link to=""></router-link> //或者指定特定路径
+```
+
+---
+
+或者可以在\<router-link>中指定名字,展示到特定页面
+
+- App.vue
+
+```js
+<router-view name="home"></router-view>
+```
+
+- router.js
+
+```js
+routes:[{
+  path:'/home'.
+  component:{
+    home:Home //名字对应标签页
+  }
+}]
+```
+
+### 编程式Router
+
+以上的都是声明式路由
+
+编程式路由:
+
+```js
+<script setup>
+import HelloWorld from './components/HelloWorld.vue'
+import router from './routers/router';
+
+function goHelloWorld(){
+  router.push("/HelloWorld")
+}
+
+function goVue() {
+  router.push("/Vue")
+}
+
+</script>
+
+<template>
+  <div>
+    <a href="https://vite.dev" target="_blank">
+      <img src="/vite.svg" class="logo" alt="Vite logo" />
+    </a>
+    <a href="https://vuejs.org/" target="_blank">
+      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+    </a>
+  </div>
+  <router-view></router-view>
+  <Button @click="goHelloWorld()">HelloWorld</Button> <br> //点击特定按钮的时候跳转
+  <Button @click="goVue">Vue</Button>
+</template>
+
+<style scoped>
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.vue:hover {
+  filter: drop-shadow(0 0 2em #42b883aa);
+}
+</style>
+```
+
+### 路由传参
+
+- 参数方式
+  - 键值对参数:/user?id=1&name=hello
+  - 路径参数:/user/1/hello
+
+#### 路径传参
+
+- 设置路径参数
+- router.js
+
+```js
+routes:[
+  {
+    path:"user/:id/:name", //通过冒号方式设置参数
+    component:User
+  }
+]
+```
+
+- 接收参数
+- User.vue
+
+```js
+<script setup>
+  import { useRoute } from 'vue-router';
+  let route = useRoute()
+  let id = route.params.id //从route上获取参数,名字要和在router.js中定义的一样
+  let name = route.params.name //从route上获取参数
+</script>
+```
+
+编程式路由
+
+- 使用push设置路径
+
+#### 键值对传参
+
+- 设置键值对参数
+- router.js
+
+```js
+routes:[
+  {
+    path:"user", //不用做任何改变
+    component:User
+  }
+]
+```
+
+- 接收参数
+- User.vue
+
+```js
+<script setup>
+  import { useRoute } from 'vue-router';
+  let route = useRoute()
+  let id = route.query.id //从route上获取参数,名字要和在router.js中定义的一样
+  let name = route.query.name //从route上获取参数
+</script>
+```
+
+### 路由守卫
+
+- 路由守卫:在路由切换期间进行一些特定任务的回调函数
+  - 全局前置守卫:在路由切换前被调用,用于验证用户是否登录等
+  - 全局后置守卫:在路由切换后被调用,用于处理数据等
+- 位置:router.js文件中
+
+>前置守卫
+
+- 参数
+  - to:从哪来
+  - from:到哪去
+  - next:放行函数
+    - next():直接放行
+    - next("/path"):重定向(谨慎使用,可能会造成死循环)
+
+```js
+router.beforeEach(
+  (to,from,next) => {
+
+  }
+)
+```
+
+```js
+router.afterEach(
+  (to,from) => {
+
+  }
+)
+```
+
+## Axios
+
+### 普通函数和回调函数的区别
+
+解决回调函数问题的机制
+
+- 普通函数:调用了函数之后才执行代码
+- 回调函数:基于事件的自动调用的函数
+  - 承诺进行中(`pending`):其他代码继续执行
+  - 承诺成功(`resolved`):准备好成功时的预案
+  - 承诺失败(`reject`):准备好失败时的预案
+
+### Promise
+
+- Promise:一个保存未来才会结束的事件的结果
+  - 一旦状态改变就不会再变
+
+>声明Promise对象,判断什么时候改变Promise的状态
+
+```js
+let promise = new Promise(function (resolve,reject){
+  if(....) {
+    resolve(values...)
+  }
+
+  if(....) {
+    reject(values)
+  }
+})
+```
+
+>定义当Promise状态发生改变的时候会执行的代码
+
+```js
+promise.then(
+  function(values...){
+    //resolve
+  },
+  function(values...){
+    //reject
+  }
+)
+```
+
+#### async和await
+
+- async:用于简化获取promise对象的关键词
+  - let promise = new Promise(function (resolve,reject){}) = async function(resolve,reject) {}
+  - 如果方法正常return结果,promise状态就是resolve,return后的结果就是成功状态后的值,并且return的值可以在resolve中被接收
+  - 如果方法出现异常,则返回的promise状态就是reject,并且异常信息也可以在reject中被接受
+  - 若async中返回的内容是一个promise对象,则状态由内部的promise对象状态决定
+
+```js
+let promise1 = async () => {
+  return 1
+}
+
+let promise2 = async () => {
+  throw new Error("reject")
+}
+
+promise1.then(
+  function(values) {
+    console.log(values) //控制台输出1
+  },
+  function() {}
+)
+
+promise2.then(
+  function(){},
+  function(values) {
+    console.log(values) //控制台输出reject
+  }
+)
+```
+
+- await:用于获取promise对象的返回值
+  - 若await右边是一个resolve的promise,则返回成功状态的返回值
+  - 若await右边是一个reject的promise,则直接抛异常
+  - await关键词必须在async修饰的函数中使用
+  - 在同一个函数内,await后面的代码会等await中的代码执行完毕之后再执行下面的代码
+
+### Axios使用
+
+使用axios获取api内容资源
+
+- 获取请求
+  - 参数:响应三要素
+    - 请求方式:get/post
+    - 请求url:api.xxx.com
+    - 请求参数: key:value/json
+
+```js
+//axios返回回来的对象是promise
+let promise = axios({
+  method:"get",
+  url:"https://api.xxx.com/api",
+  
+  //若请求方式是post,则这一段会以json方式放入请求体
+  data:{
+    key:value
+  }
+  //都是以键值对方式放在后面
+  params:{
+    key:value
+  }
+})
+```
+
+- 获取response
+  - 内容:
+    - data:响应回来的数据
+    - status:响应状态状态码
+    - statusText:响应状态描述
+    - headers:本次响应的响应头
+    - config:本次请求的配置信息
+    - request:XMLHttpRequest对象
+
+```js
+async function getapi() {
+  const data = await promise.data; //获取返回的内容
+}
+```
+
+### Axios的get和post方法
+
+- get方法
+  - 参数:
+    - url:api.xxx.com
+    - params:{key:value}键值对参数
+    - header:特殊的请求头
+
+```js
+axios.get(
+  "https://api.xxx.com",
+  {
+    params:{
+      key:value
+    }
+  }
+)
+```
+
+- post方法:
+  - 参数:
+    - 和get方法一样,在url后面多了个请求体对象,在发送请求之后会转成json对象
+
+```js
+axios.post(
+  "https:api.xxx.com",
+  //这一行将会变成json对象
+  {
+    key:value
+  },
+  {
+    params:{
+      key:value
+    },
+    header:{
+
+    }
+  }
+)
+```
+
+### Axios拦截器
+
+```mermaid
+graph LR
+    A[浏览器] -->|axios| B[请求拦截器]
+    B --> C[服务器]
+    C --> D[响应拦截器]
+    D --> A
+    
+    subgraph 请求拦截器
+        A1[设置请求的信息]
+        A2[请求错误的错误数据]
+    end
+    
+    subgraph 响应拦截器
+        D1[状态为200时要执行的函数]
+        D2[响应状态码不是200时]
+    end
+```
+
+```js
+//设置初始化配置
+const request = axios.create({
+    baseURL:"api.xxx.com",
+    timeout:20000
+})
+
+//创建请求拦截器
+request.interceptors.request.use({
+    //当请求成功时执行的代码
+    function(config) {
+      //当设置配置之后必须返回配置
+      return config
+    },
+    //当请求失败时执行的代码
+    function(error){
+      //当出现异常时必须返回拒绝的promise对象
+      return Promise.reject(error)
+    }
+})
+
+//返回一个创建连接的对象
+export default request
+```
+
+## Pinia
+
+Pinia可以定义多个共享数据用于组件之间传递数据(但无法持久化,需结合sessionStorage和localStorage)
+
+详细的看官方文档
