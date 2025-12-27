@@ -46,7 +46,7 @@ A(客户端:发送请求) -->B(创建链接) --> C(三次握手) --> D(服务端
 
 ### 报文格式
 
-![alt text](image.png)
+![alt text](/Web后端/img/image.png)
 
 ### 请求报文
 
