@@ -21,6 +21,7 @@ public String user(String name,Integer age) {
   - @RequestParams注解:可将参数名转化成别名
     - name:实际请求链接中的参数
     - **required**:是否必须,默认为true,若请求链接未带参数则返回400状态值
+    - defaultValue:设置默认参数
 
 ```java
 @RequestMapping("/user")
