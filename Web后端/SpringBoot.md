@@ -248,3 +248,175 @@ IOC中的对象称为Bean对象
   - @Primary:在Bean声明上增加,表示注入当前类
   - @Qualifier:用名称的方式指定,例如@Qualifier("empService"),要和@Autowired一起使用
   - @Resource:和@Qualifier相同,但前者是根据类型注入,后者是根据名称注入,方式为@Resource(name="empService")
+
+## AOP面向切面编程
+
+- 概念
+  - 连接点(JointPoint):可以被切面控制的具体方法(通过注解制定方法)
+  - 通知(Advice):各个连接点的共性方法(可重复方法,aop方法内具体逻辑)
+  - 切入点(PointCut):匹配连接点的条件(过滤条件,注解实现)
+  - 切面(Aspect):以上三个概念形成的方法(aop内方法)
+  - 目标(Target):通过切入点匹配的对象(注解制定)
+
+>底层通过动态代理+插入代码实现
+
+### 通知类型
+
+- 通知通过注解实现
+  - @Around:在通知点前后执行代码
+  - @Before:在通知点之前执行代码
+  - @After:在通知点之后执行代码,抛出错误也会执行
+  - @AfterReturning:同@After,抛出错误之后不会执行
+  - @AfterThrowing:在抛出错误之后才会执行
+
+@Around注解需要配置形参**ProceedingJoinPoint**,并且需要调用其方法
+
+```java
+@Around("execution (切点表达式))")
+public Object method(ProceedingJoinPoint process) {
+    //执行前方法
+
+    Object proceed = joinPoint.proceed();
+
+    //执行后方法
+
+    return proceed;
+}
+```
+
+当切点表达式重复过多可使用@PointCut抽象出来
+
+```java
+@PointCut("execution (切点表达式)")
+private void pointCut();
+```
+
+### 通知顺序
+
+当多个切面匹配到同一个切入点时候执行方法的顺序
+
+规则:字母顺序排前的@Before先执行,字母顺序排前的@After后执行
+
+>可以使用@Order注解设置,数字越小越先执行
+
+### 切入点表达式
+
+- 常见形式
+  - execution(...):根据方法签名匹配
+  - @annotation(...):根据方法注解匹配
+
+#### execution
+
+`execution(访问类型? 返回值? 包名.类名.?方法名(方法参数) throws 异常?)`
+
+通配符:`execution(* com.github.project.*.*(*/..))` $->$指在project包下的所有类的所有方法中的(单个/多个参数)
+
+也可使用||等逻辑符链接多个切入点表达式
+
+#### @annotation
+
+`@annotation(包名)`
+
+### 连接点
+
+#### JoinPoint
+
+对于@Around只能使用ProcessJoinPoint获取信息,其他均可以使用JoinPoint获取
+
+```java
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.*;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+
+@Aspect
+@Component
+public class JoinPointAspect {
+
+   // ========== JoinPoint 示例（前置通知）==========
+   @Before("execution(* com.example.service.*.*(..))")
+   public void beforeAdvice(JoinPoint joinPoint) {
+       System.out.println("=== JoinPoint 方法 ===");
+       
+       // 基础信息
+       System.out.println("方法名: " + joinPoint.getSignature().getName());
+       System.out.println("参数: " + Arrays.toString(joinPoint.getArgs()));
+       System.out.println("目标类: " + joinPoint.getTarget().getClass().getSimpleName());
+       System.out.println("代理类: " + joinPoint.getThis().getClass().getSimpleName());
+       
+       // 签名详情
+       org.aspectj.lang.reflect.MethodSignature signature = 
+           (org.aspectj.lang.reflect.MethodSignature) joinPoint.getSignature();
+       System.out.println("返回类型: " + signature.getReturnType());
+       System.out.println("参数类型: " + Arrays.toString(signature.getParameterTypes()));
+       
+       // 反射获取 Method
+       java.lang.reflect.Method method = signature.getMethod();
+       System.out.println("Method对象: " + method.getName());
+       
+       // 连接点类型
+       System.out.println("Kind: " + joinPoint.getKind());
+   }
+
+   // ========== ProceedingJoinPoint 示例（环绕通知）==========
+   @Around("execution(* com.example.service.*.*(..))")
+   public Object aroundAdvice(ProceedingJoinPoint pjp) throws Throwable {
+       System.out.println("=== ProceedingJoinPoint 方法 ===");
+       
+       // 继承自 JoinPoint 的所有方法都能用
+       System.out.println("方法名: " + pjp.getSignature().getName());
+       System.out.println("参数: " + Arrays.toString(pjp.getArgs()));
+       
+       // ProceedingJoinPoint 特有方法
+       System.out.println("目标对象: " + pjp.getTarget());
+       
+       // 1. 获取方法签名（强制转换）
+       org.aspectj.lang.reflect.MethodSignature signature = 
+           (org.aspectj.lang.reflect.MethodSignature) pjp.getSignature();
+       
+       // 2. 获取参数名（需编译带 -parameters 或 -g）
+       String[] paramNames = signature.getParameterNames();
+       if (paramNames != null) {
+           for (int i = 0; i < paramNames.length; i++) {
+               System.out.println("参数名 " + paramNames[i] + " = " + pjp.getArgs()[i]);
+           }
+       }
+       
+       // 3. 修改参数（创建新数组）
+       Object[] args = pjp.getArgs();
+       if (args.length > 0 && args[0] instanceof String) {
+           args[0] = "修改后的" + args[0];
+       }
+       
+       // 4. 执行目标方法（关键！不调用则方法不执行）
+       long start = System.currentTimeMillis();
+       Object result = pjp.proceed(args);  // 使用修改后的参数
+       long end = System.currentTimeMillis();
+       
+       System.out.println("执行耗时: " + (end - start) + "ms");
+       System.out.println("返回值: " + result);
+       
+       // 5. 修改返回值
+       if (result instanceof String) {
+           result = ((String) result).toUpperCase();
+       }
+       
+       return result;
+   }
+
+   // ========== AfterReturning 获取返回值 ==========
+   @AfterReturning(pointcut = "execution(* com.example.service.*.*(..))", returning = "result")
+   public void afterReturning(JoinPoint joinPoint, Object result) {
+       System.out.println("返回值: " + result);
+   }
+
+   // ========== AfterThrowing 获取异常 ==========
+   @AfterThrowing(pointcut = "execution(* com.example.service.*.*(..))", throwing = "ex")
+   public void afterThrowing(JoinPoint joinPoint, Exception ex) {
+       System.out.println("异常类型: " + ex.getClass().getSimpleName());
+       System.out.println("异常信息: " + ex.getMessage());
+   }
+}
+```
