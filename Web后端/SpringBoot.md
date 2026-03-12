@@ -420,3 +420,103 @@ public class JoinPointAspect {
    }
 }
 ```
+
+## Bean管理
+
+使用ApplicationContext接口获取Bean信息
+
+```java
+@Autowired
+private ApplicationContext applicationContext;
+```
+
+### 获取Bean对象
+
+- getBean重载方法
+  - getBean(String name);
+  - getBean(Class<?> type);
+  - getBean(String name,Class<?> type);
+
+>ApplicationContext中还有其他获取Bean信息的方法
+
+### Bean的作用域
+
+使用注解@Scope设置作用域
+
+|作用域|说明|
+|:--:|:--:|
+|singleton|单例模式|
+|prototype|每次使用该Bean都会重新创建一个Bean对象|
+|request|每个请求范围都会创建一个Bean对象|
+|session|回个会话范围都会创建一个Bean对象|
+|application|每个应用范围都会创建一个Bean对象|
+
+### 配置第三方Bean
+
+若Bean对象来自第三方(不可修改),则需要注解@Bean设置第三方Bean
+
+```java
+@Configuration
+public class OshiConfig {
+
+    @Bean
+    public SystemInfo systemInfo() {
+        return new SystemInfo();
+    }
+}
+```
+
+## SpringBoot原理
+
+Spring家族
+
+```mermaid
+graph LR
+A(Spring) --> B(SpringFramework) -->C(SpringBoot) -->|重要功能|D(起步依赖)
+C -->|重要功能|E(自动配置)
+```
+
+### 起步依赖
+
+maven配置有依赖传递的特性,因此只需要在`pom.xml`中引入`spring-boot-starter-web`依赖即可完成springboot的配置
+
+### 自动配置
+
+自动配置:当springboot启动后,引入的依赖或者手动编写的Bean对象自动导入到spring的ioc容器当中
+
+- 设置方案
+  - 方案一:使用@ComponentScan(String[] args)注解扫描第三方依赖中的Bean
+  - 方案二:使用@Import({Class<> clazz})注解
+  - 方案三:导入ImportSelector的实现类(本质是返回String数组)
+  - 方案四:使用@EnableXXX注解(本质是开启封装类@Import注解)
+
+底层注解使用:
+
+```mermaid
+graph TD
+
+A(SpringBootApplication) -->B(SpringBootConfiguration)
+A --> C(EnableAutoConfiguration)
+A --> D(ComponentScan)
+
+B --> E(Configuration) --> F(Component)
+C --> G(AutoConfigurationPackage) --> H(Import AutoConfigurationPackages.Registrar.class)
+C --> I(Import  AutoConfigurationImportSelector.class)
+```
+
+在AutoConfigurationImportSelector中实现了ImportSelector接口,实现了`selectImports()`方法
+
+在AutoConfigurationImportSelector类中可以找到SpringBoot自动配置的位置文件:`META-INF/spring/ + this.autoConfigurationAnnotation.getName() + .imports`(旧版本会有一个`.factory`的文件)
+
+### 条件自动配置
+
+使用@Conditional及其子注解,在特定条件下才注入Bean
+
+## 总结
+
+```mermaid
+graph LR
+A(SQL) --> B(DAO层) -->C(Service层) --> D(Contorller层) -->F(拦截器) -->G(过滤器) -->E(Web端)
+E --> H(会话管理Session/Cookied)
+E --> G(现代会话管理JWT)
+```
